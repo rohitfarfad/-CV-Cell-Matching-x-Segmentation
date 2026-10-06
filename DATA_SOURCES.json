@@ -1,0 +1,144 @@
+{
+  "checked_on": "2026-10-06",
+  "source_pdf": "ComputerVision_Project2 (1).pdf",
+  "notes": "Official assignment inputs. Original filenames and bytes preserved; redundant downloaded Qn wrapper directory removed. Width/height use pixel units. SHA-256 hashes were computed locally after download, not supplied by the course.",
+  "datasets": [
+    {
+      "question": 1,
+      "pdf_page": 3,
+      "source_url": "https://drive.google.com/drive/folders/1k8hI7fzsFbQjLormykYMNexBWOQWG95I",
+      "files": [
+        {
+          "path": "Q1 Data/Runway.jpg",
+          "bytes": 150915,
+          "sha256": "a2582de1c0e4c447db32641d0e6773fd44a07fa4d38c3bfb02adb1e4294a0c97",
+          "width": 1280,
+          "height": 850,
+          "mode": "RGB"
+        }
+      ]
+    },
+    {
+      "question": 2,
+      "pdf_page": 4,
+      "source_url": "https://drive.google.com/drive/folders/1GvVYEa3E-fRXkHfTyT1CpwSrpRZJtiUp",
+      "files": [
+        {
+          "path": "Q2 Data/Scene.png",
+          "bytes": 16086811,
+          "sha256": "54339dc7e1f45a22e54d080129233c0214655dbc29cc26208256e94cfcf7a610",
+          "width": 4284,
+          "height": 5712,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q2 Data/Source_Screen.png",
+          "bytes": 6684321,
+          "sha256": "f874d0ef209213cab60e43bc11e19c8a828d7d0efaa455a93cba9715a2d388fa",
+          "width": 1729,
+          "height": 2527,
+          "mode": "RGBA"
+        },
+        {
+          "path": "Q2 Data/replacement_screen.jpg",
+          "bytes": 102678,
+          "sha256": "28ff9ec64ee16c9bf1f17c7d5a739971e02ae4f46e862ea5b084540221e334a1",
+          "width": 792,
+          "height": 1000,
+          "mode": "RGB"
+        }
+      ]
+    },
+    {
+      "question": 3,
+      "pdf_page": 5,
+      "source_url": "https://drive.google.com/drive/folders/1KvzEp2Ny-F_k9ZU_G4O9ouc6OTcbBdWJ",
+      "files": [
+        {
+          "path": "Q3 Data/Q3_Image_1.jpg",
+          "bytes": 102988,
+          "sha256": "ca3a144d801761d05e0ffd99196b21629ad3864d9595a9ab09795f0eb047029e",
+          "width": 640,
+          "height": 480,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q3 Data/Q3_Image_2.jpg",
+          "bytes": 93311,
+          "sha256": "90edea589b932dda0f88e9c7401a84e7cea0064b5aeee54e595f50cf8046b1ce",
+          "width": 640,
+          "height": 480,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q3 Data/Q3_Image_3.jpg",
+          "bytes": 115582,
+          "sha256": "83bffa429a2c82efee6afd2de54f5b169811181c23f814dee610a8f8f4229dc7",
+          "width": 640,
+          "height": 480,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q3 Data/Q3_Image_4.jpg",
+          "bytes": 105853,
+          "sha256": "cc4597d13f304d592d147768aa8a80cc9a152ac89e2ec8b8513e908d5472f558",
+          "width": 640,
+          "height": 480,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q3 Data/Q3_Image_5.jpg",
+          "bytes": 102480,
+          "sha256": "6a60812d100273f89ca6bf348d2a41e47d0d5eabbbff307748460142f0b8ed23",
+          "width": 640,
+          "height": 480,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q3 Data/Q3_Image_6.jpg",
+          "bytes": 104892,
+          "sha256": "b241fff5545214da72a93df7e0c49bac29f7cc33dbb84063dedfd2ee5efe001e",
+          "width": 640,
+          "height": 480,
+          "mode": "RGB"
+        }
+      ]
+    },
+    {
+      "question": 4,
+      "pdf_page": 6,
+      "source_url": "https://drive.google.com/drive/folders/1m2ayUNDVZH7ZRoKVUph7WO4Gcd9nvV3N",
+      "files": [
+        {
+          "path": "Q4 Data/Q4_Image_1.jpg",
+          "bytes": 1051162,
+          "sha256": "e6418bb027d3d972b1e070651c2e0cd8dd2bd4c374c79d41a233b55d283d22ed",
+          "width": 2048,
+          "height": 1448,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q4 Data/Q4_Image_2.jpg",
+          "bytes": 1081227,
+          "sha256": "114a8fdfccd85685ef51541a8e13ea422c064f82842f14359db1b950a118219d",
+          "width": 2048,
+          "height": 1517,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q4 Data/Q4_Image_3.jpg",
+          "bytes": 582326,
+          "sha256": "b82a8146e9201ae84704334f07bf144c09689faf12e4a66e05d8287b4fe09f69",
+          "width": 1419,
+          "height": 2048,
+          "mode": "RGB"
+        },
+        {
+          "path": "Q4 Data/clicks.json",
+          "bytes": 691,
+          "sha256": "fa9348c5bb15229544b62020e91e1888a7ae9afc3ea8e7655e5c664e0017cdc0"
+        }
+      ]
+    }
+  ]
+}

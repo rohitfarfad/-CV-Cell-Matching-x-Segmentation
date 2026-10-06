@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+.cache/
+tmp/
+.env
+kaggle.json
+
+# Large original datasets and generated results stay local.
+Q1 Data/
+Q2 Data/
+Q3 Data/
+Q4 Data/
+Data/
+outputs/
+Kaggle Submissions/

@@ -1,0 +1,5 @@
+# Optional tools used for official dataset downloads and handout inspection
+-r requirements.txt
+gdown==6.4.1
+pypdf==6.19.0
+PyMuPDF==1.28.2
