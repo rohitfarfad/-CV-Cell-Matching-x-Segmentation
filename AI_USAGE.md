@@ -63,3 +63,9 @@ Assistance: reduced Q1 from 133 to 67 nonblank code lines, removed redundant plo
 > For question1, add the final solution images in origianl image resolution and after that give the overview of the solution for question 2 using concepts covered in the class
 
 Assistance: embed the original and annotated Q1 images at native 1280 × 850 resolution; outline SIFT matching, RANSAC homography estimation, perspective warping and mask-based compositing for Q2. No Q2 solution code added.
+
+## Request 10 — 2026-10-08
+
+> Great, add the solution for question 2 in the notebook with minimum code and optimizing the token usage
+
+Assistance: implement a concise SIFT/ratio-test/RANSAC homography solution, warp and composite the replacement at original scene resolution, inspect the result, and document the small boundary mismatch caused by the curved cover. No manual coordinates or learned methods; README and Q3–Q5 remain unchanged.

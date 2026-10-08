@@ -6,7 +6,7 @@ NYU Tandon, CS-GY 6643 Computer Vision, Fall 2026. This workspace covers Project
 
 **User workflow:** Complete Q1–Q4 first in `Q1to4Solution.ipynb`, using the reviewed lecture slides and local codelab snippets described in §6. Then develop Q5 in `CellMatchingSegmentation.ipynb`, building on the relevant concepts and small reusable snippets from Q1–Q4.
 
-**Current authorization includes Q1 implementation:** after source review and an approach overview, the user requested “great, let's code it in the notebook” on 2026-10-08. Q1 is implemented in `Q1to4Solution.ipynb`; Q2–Q4 and Q5 remain placeholders for subsequent tasks. Preserve the completed Q1 work and the user's minimal-code preference.
+**Current authorization includes Q1 and Q2 implementation:** after source review and an approach overview, the user requested “great, let's code it in the notebook” on 2026-10-08. Q1 and Q2 are implemented in `Q1to4Solution.ipynb`; Q3–Q4 and Q5 remain placeholders for subsequent tasks. Preserve the completed Q1 work and the user's minimal-code preference.
 
 **Keep code simple and minimal.** Prefer straightforward notebook cells, clear variable names, and a few short functions. Add a helper `.py` file only when actual reuse or the eventual runnable Q5 submission justifies it. Avoid frameworks, unnecessary classes, configuration layers, speculative fallbacks, elaborate caching, and extra dependencies. Minimal means easy to understand, not compressed or cryptic. Start with the simplest class-based method and add complexity only to address an observed failure.
 
@@ -86,7 +86,7 @@ The notebook kernel is `Python (CV Project 2)`, installed inside `.venv`, not gl
 
 Read actual image sizes and the JSON schema before implementation. `(x, y)` means column, row for supplied clicks; array indexing is `[y, x]`. Keep color order, mask dimensions, image coordinates, and warp direction explicit. Do not infer hidden ground truth or claim accuracy against it from visual inspection.
 
-In the shared notebook, keep each question's inputs, explanation, code, immediate final result, and supporting measurements/discussion together. Run from a clean kernel and retain executed outputs for final submission. Q1 now contains executed code/results; the remaining questions are scaffolds.
+In the shared notebook, keep each question's inputs, explanation, code, immediate final result, and supporting measurements/discussion together. Run from a clean kernel and retain executed outputs for final submission. Q1 and Q2 contain executed code/results; the remaining questions are scaffolds.
 
 ## 5. Q5: cell matching and segmentation
 
@@ -214,8 +214,12 @@ Setup validation passed on Python 3.12.6: all core library imports, `pip check`,
 - Validation: all notebook code executed in order in a fresh kernel; no cell errors; final image and diagnostic figures visually inspected; all 14 original input hashes unchanged. Q2–Q4 placeholder cells, Q5 notebook, and README match their previous versions. No new dependencies, learned models, Kaggle predictions, or submissions.
 - Reuse: `ransac_boundary` and its normalized point-to-line residual/SVD consensus pattern support later geometric reasoning; the grass-color cue and image-specific thresholds do not transfer directly to cell images. Q1 notebook locators are its section headings and helper name, not execution numbers.
 
-Next: implement Q2–Q4 when requested using the reviewed lecture/codelab foundations. Keep README unchanged during development. Before Q5 implementation, inspect its actual dataset and validate the codelab RLE convention against released masks/scorer. Before final submission, fill identity placeholders, rerun notebooks cleanly, retain outputs, and verify current deadlines/settings and reproducibility.
+Next: implement Q3–Q4 when requested using the reviewed lecture/codelab foundations. Keep README unchanged during development. Before Q5 implementation, inspect its actual dataset and validate the codelab RLE convention against released masks/scorer. Before final submission, fill identity placeholders, rerun notebooks cleanly, retain outputs, and verify current deadlines/settings and reproducibility.
 
 **Q1 simplification:** user requested minimum code. Reduced 133 to 67 nonblank code lines, retaining class-based RANSAC, pair checks, essential figures and RMS diagnostics. Fresh-kernel rerun passed; output PNG is byte-identical. Prefer this concise style for subsequent questions.
 
 **Q1 display follow-up:** original and annotated images are embedded directly at 1280 × 850, preserving native pixel data independently of viewer scaling. Q2 approach overview is authorized; its implementation remains pending.
+
+**Q2 implementation, 2026-10-08:** user authorized a minimal solution. Added two code cells adapting L4 cell 10: SIFT on 2400-pixel working images, 0.75 ratio test, RANSAC homography in original coordinates, bilinear artwork warp and nearest-neighbor mask compositing. Output: `outputs/q2/replaced_cover.png`, 4284 × 5712. Fit: 84/286 inliers; median reprojection residual 2.83 scene pixels. The physical cover is curved, so narrow original-artwork strips remain along some boundaries; this is documented rather than claimed as pixel-perfect replacement. No manual coordinates. README and Q3–Q5 remain unchanged. Prompt record updated through request 10.
+
+Q2 validation: full notebook executed in a fresh kernel without errors; saved PNG dimensions verified; unchanged pixels outside the mask asserted during execution. The warped cover was visually inspected.
