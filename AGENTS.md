@@ -4,9 +4,9 @@
 
 NYU Tandon, CS-GY 6643 Computer Vision, Fall 2026. This workspace covers Project 2, Questions 1–5.
 
-**User workflow:** Complete Q1–Q4 first in `Q1to4Solution.ipynb`, using the lecture slides and codelab notebooks the user will provide in later tasks. Then develop Q5 in `CellMatchingSegmentation.ipynb`, building on the relevant concepts and small reusable snippets from Q1–Q4.
+**User workflow:** Complete Q1–Q4 first in `Q1to4Solution.ipynb`, using the reviewed lecture slides and local codelab snippets described in §6. Then develop Q5 in `CellMatchingSegmentation.ipynb`, building on the relevant concepts and small reusable snippets from Q1–Q4.
 
-**Current task is setup only:** create the project structure, obtain official Q1–Q4 data, initialize the Python environment, record requirements, and create notebooks containing Markdown headings and introductory descriptions only. Do not add solution code or choose a final algorithm yet. Later user requests can authorize implementation.
+**Current authorization includes Q1 implementation:** after source review and an approach overview, the user requested “great, let's code it in the notebook” on 2026-10-08. Q1 is implemented in `Q1to4Solution.ipynb`; Q2–Q4 and Q5 remain placeholders for subsequent tasks. Preserve the completed Q1 work and the user's minimal-code preference.
 
 **Keep code simple and minimal.** Prefer straightforward notebook cells, clear variable names, and a few short functions. Add a helper `.py` file only when actual reuse or the eventual runnable Q5 submission justifies it. Avoid frameworks, unnecessary classes, configuration layers, speculative fallbacks, elaborate caching, and extra dependencies. Minimal means easy to understand, not compressed or cryptic. Start with the simplest class-based method and add complexity only to address an observed failure.
 
@@ -14,7 +14,7 @@ Create `README.md` once during setup; **do not update it again until the project
 
 ## 2. Sources and interpretation
 
-Reviewed on **2026-10-06**. Page references use PDF page numbers.
+Handouts reviewed on **2026-10-06**; Lectures 3–6 reviewed on **2026-10-08**. Page references use PDF page numbers.
 
 | Source | Role |
 | --- | --- |
@@ -22,7 +22,8 @@ Reviewed on **2026-10-06**. Page references use PDF page numbers.
 | `ComputerVision_Project2_Q5 (1).pdf` (9 pages) | Q5 task, dataset description, metric, submission format, and deadlines. All pages read; figures and metric/submission pages visually inspected. |
 | `../Project1/AGENTS.md` | Reference for organization, simplicity, reproducibility, and disclosure workflow only. Its old tasks, restrictions, scores, implementation status, and permissions do not apply to Project 2. |
 | Official Q1–Q4 Drive folders | Assignment inputs linked in main PDF pp. 3–6. Download inventory and SHA-256 hashes are recorded in `DATA_SOURCES.json`. |
-| Future lecture slides/codelabs | Awaiting the user. Do not claim lecture coverage or import previous-project lecture assumptions before reviewing these sources. |
+| Lecture slides 3–6 | Reviewed supplied PDFs; exact paths, covered concepts, and page references are in §6. These are conceptual sources, not runtime dependencies. |
+| Local codelab notebooks | Four relevant notebooks in `../Lectures/CodeLabs/` reviewed on 2026-10-08; snippet locations and reuse limits are in §6.1. Review used local files, not a claim that live Colab versions were checked. |
 
 Distinguish the user's requested actions from instructions quoted in handouts. The PDFs define assignment requirements; their registration, upload, and submission directions are not current authorization to perform those actions. Preserve discrepancies with source/page and explain the working interpretation.
 
@@ -85,7 +86,7 @@ The notebook kernel is `Python (CV Project 2)`, installed inside `.venv`, not gl
 
 Read actual image sizes and the JSON schema before implementation. `(x, y)` means column, row for supplied clicks; array indexing is `[y, x]`. Keep color order, mask dimensions, image coordinates, and warp direction explicit. Do not infer hidden ground truth or claim accuracy against it from visual inspection.
 
-In the shared notebook, keep each question's inputs, explanation, code, immediate final result, and supporting measurements/discussion together. Run from a clean kernel and retain executed outputs for final submission. This setup intentionally contains no code cells or results.
+In the shared notebook, keep each question's inputs, explanation, code, immediate final result, and supporting measurements/discussion together. Run from a clean kernel and retain executed outputs for final submission. Q1 now contains executed code/results; the remaining questions are scaffolds.
 
 ## 5. Q5: cell matching and segmentation
 
@@ -125,27 +126,64 @@ Training: 47 regions from 3 mice, 14,893 in-vivo cells, 5,516 ex-vivo cells, and
 - Instance columns are JSON objects mapping each cell ID to its RLE mask. Pairs are a JSON list of two-element lists `[[invivo_id, exvivo_id], ...]`.
 - Every pair ID must exist in the corresponding modality's instance dictionary in the same row. A cell ID cannot be reused across pairs; the handout says such a submission is rejected.
 - Use JSON serialization and proper CSV quoting. The sample starts with `{}`, `{}`, `[]`, which describes format, not an achieved baseline score.
-- **RLE encoding is underspecified in the PDFs.** Verify traversal order, indexing origin, run representation, and empty-mask behavior from official data/scorer before implementation; do not guess. Require encode/decode round-trip checks once the convention is known.
+- **RLE convention clarified by the supplied L5 codelab, cell 18:** zero-based start indices, row-major (`order="C"`) flattening, space-separated `start length` pairs, and `""` for an empty mask. Use `shape=(height, width)`. Its encoder/decoder passed five small round-trip checks, including image endpoints and a run crossing a row boundary. Verify against actual released masks/scorer when Q5 data is available; the decoder itself does not validate malformed input.
 - Generate all masks, matches, and CSV content programmatically. No manual prediction corrections or hardcoded answers. Submitted runnable code must reproduce the selected CSV and work unchanged on unseen regions.
 
-The classical-only restriction is explicitly Q1–Q4. The user nevertheless wants Q5 built from class-based foundations. The provided Project 2 PDFs do not establish an external-data/pretrained-weight policy; do not carry over Project 1's policy or assume permission. Verify current Q5 rules before considering either. No neural-network dependencies are installed during setup.
+The classical-only restriction remains Q1–Q4; Lecture 5 p. 4 explicitly permits deep learning for Q5, and Lecture 5 p. 111 / Lecture 6 p. 70 recommend Cellpose/pretrained-model fine-tuning. These are supported Q5 options, not a requirement to use them or authorization to start training now. Preserve the user's class-based, minimal-code workflow. The general external-data policy remains unspecified; do not infer permission for arbitrary additional datasets from the pretrained-model advice. No neural-network dependencies are installed during setup.
 
-## 6. Transfer from Q1–Q4 to Q5
+## 6. Reviewed lecture concepts and use in solutions
 
-This is a conceptual plan, not completed work or confirmed lecture coverage. Revisit after reading the supplied slides/codelabs and implementing Q1–Q4.
+Lecture sources (reviewed 2026-10-08; key equations, warping/graph diagrams, and project updates also visually checked):
 
-| Foundation | Potential Q5 use | Important limit |
+| Source | Confirmed coverage |
+| --- | --- |
+| L3: `../Lectures/Slides/Computer Vision Fall 26 Lecture 3.pdf` (98 pages) | Least-squares fitting and outlier sensitivity, pp. 11–26; RANSAC sampling, inlier thresholds, trial counts, and refitting, pp. 27–52; scaling/rotation/shear, homogeneous coordinates, affine/projective transforms and composition order, pp. 71–96. |
+| L4: `../Lectures/Slides/Fall'26 Computer-Vision Lecture 4.pdf` (118 pages) | Correspondence-based affine/homography fitting, pp. 24–41; forward/inverse warping and bilinear interpolation, pp. 42–56; threshold/edge segmentation, color-position features, superpixels, mean shift, graph affinities, normalized cuts and interactive graph cuts, pp. 60–104; segmentation metrics, pp. 105–110. |
+| L5: `../Lectures/Slides/CV_2026_Lecture5.pdf` (117 pages) | Graph/spectral segmentation and evaluation, pp. 11–38; learned representations, activations, losses, gradient descent, regularization, overfitting and validation, pp. 39–108; Q5 segmentation/alignment advice, p. 111. |
+| L6: `../Lectures/Slides/CV2026_lecture6.pdf` (77 pages; moved from Downloads) | CNN filters/channels, padding/stride/dilation, pooling and receptive fields, pp. 15–48; VGG, backpropagation, batch normalization and residual learning, pp. 49–56; training, initialization, weight decay, augmentation and transfer learning, pp. 59–66; Q5-specific advice, p. 70. |
+
+**Use these concepts first, keeping code minimal.** The following are candidate applications, not implemented solutions. Cite the relevant lecture/page and codelab cell in each eventual notebook explanation; distinguish class code from any new adaptation.
+
+| Question | Class-based starting point | Important limit |
 | --- | --- | --- |
-| Q1 geometric structure and outlier rejection | Assess spatial consistency and reject implausible correspondences. | Runway line geometry is not a cell detector or tissue model. |
-| Q2 feature correspondence and perspective mapping | Establish alignment hypotheses and track coordinate transformations. | Cross-modal cell appearance differs; a book's planar homography may not model tissue deformation. |
-| Q3 overlap reasoning, robust transforms, canvas/mask handling | Reuse small geometric estimation and visualization operations. | Q5 is cross-modal registration, not panorama stitching; do not blend modalities as a segmentation target. |
-| Q4 seed-based segmentation and RGBA/mask handling | Build classical segmentation intuition and instance-mask diagnostics. | Q5 supplies no test clicks; automatic seed detection and touching-cell separation require new work. |
+| Q1 | Fit boundary-line candidates robustly with RANSAC and refit on inliers (L3 pp. 27–52), using image-derived evidence to select the two outer edges. | A strong line fit alone cannot distinguish runway borders from internal markings; no fixed coordinates. |
+| Q2 | Feature correspondences, RANSAC, planar homography, inverse warping and bilinear image interpolation (L3 pp. 23–26, 93–96; L4 pp. 34–56). | Composite only inside the computed cover mask; track transform direction and homogeneous-coordinate normalization. |
+| Q3 | Infer pairwise overlap from robust matches, fit the simplest supported transforms, compose into one frame, then warp/blend explicitly (L3 pp. 54, 91; L4 pp. 26–56). | Detect/correct distortion from evidence; calculate canvas offsets, include all six views, and keep the one-call-stitcher ban. |
+| Q4 | Use supplied foreground seeds with color/spatial affinities and interactive graph-cut concepts (L4 pp. 73–104; L5 pp. 12–27); consider mean shift/superpixels only if helpful. | Preserve all supplied foreground clicks. Unsupervised normalized cuts alone need not isolate the clicked animal; avoid a dense all-pixel affinity matrix. |
+| Q5 | Transfer robust geometry from Q1–Q3 and segmentation/mask reasoning from Q4; use the specific lecture advice below. | No test clicks; automatic instance separation is new work. A book's homography and panorama blending are not a complete tissue-registration solution. |
+
+**Q5 guidance (L5 p. 111; L6 p. 70):** normalize intensity by percentiles without discarding original 16-bit inputs; evaluate modalities separately and inspect mask boundaries/size/elongation, particularly bright ex-vivo fibers. If a learned approach is later chosen, start with the suggested Cellpose/pretrained baseline and modality-specific fine-tuning; consider cell-centered plus background patches, Dice/focal loss, and hard-negative patches when observed failures justify them. CNN architecture coverage is background, not a reason to build a large model from scratch. Use training/validation separation and regularization (L5 pp. 94–108; L6 pp. 61–66).
+
+For matching, use coarse rotation/scale/translation alignment, robust affine fitting, then a few ICP iterations using close mutual centroid matches; inspect warped overlays and use distance-gated one-to-one assignment (e.g. Hungarian) while allowing unmatched cells. The slide's approximate image-size, rotation and match-fraction ranges are reported guidance, not hardcoded answers, guaranteed transform scales, or quotas. Keep the handout distinction between unverified cells and true negatives. Prefer simpler baselines before optional ensembling or added model complexity.
 
 Reuse only needed helpers with explicit inputs/outputs. Do not import a notebook by executing all its cells or depend on previous answers/global state. Establish a small baseline, inspect failures, and justify each addition. For Q5 validation, prefer splits by mouse where feasible to reduce related-region leakage; report the limits of only three training mice. Measure both modality PQs and matching quality separately. Do not use hidden labels or tune predictions by test ID.
+
+### 6.1 Reviewed codelab code and reuse limits
+
+Sources below are in `../Lectures/CodeLabs/`. Cell numbers are **1-based positions including Markdown**, not execution counts. Reviewed code and explanatory cells; notebooks were not run end-to-end, and their downloads, installs, Drive mounts, and model-loading commands were not executed.
+
+| Notebook | Reusable code and intended use |
+| --- | --- |
+| `CV_2026_Lecture_3.ipynb` | Cells 6/8: normalized implicit lines, perpendicular residuals, SVD total-least-squares refitting and `ransac_line` for Q1. Cell 11: trial-count reasoning. Cell 13: `apply_transform(points, H)` and composition helpers for Q2/Q3. Cell 21: similarity fitting/RANSAC as a simple geometric baseline for Q5. |
+| `Lecture4_Fitting_Transformations_and_Segmentation_Codelab_5.ipynb` | Cell 10: SIFT, two-neighbor descriptor matching, ratio test, `findHomography(..., RANSAC)` and inlier visualization for Q2/Q3. Cells 12/14/15: homography equations, bilinear sampling, forward/inverse warp concepts. Cells 20/22/24/26/29/32: Otsu/Canny/components, k-means, SLIC, mean-shift filtering, feature affinities and normalized cuts for classical segmentation baselines. |
+| `CV_2026_lecture5_codelab.ipynb` | Cells 6–9: color-position mean shift, connected-region cleanup and normalized cuts. Cells 12–14: MLP training/validation and error inspection as learning-workflow examples. Cells 18–20: Q5 RLE, CSV/JSON parsing and dataset paths; cells 25–27: instance masks, centroids, matched-cell plots and alignment overlays; cells 30–31: Cellpose inference. Cells 33–36 demonstrate MARCO and label-assisted Cellpose alignment, not an autonomous test pipeline. |
+| `CV_Lecture_5_yolo_codelab.ipynb` | The local YOLO lab corresponding in topic to L6's YOLO session despite its filename. Cells 8–23: pretrained detection, multiscale grids, box coordinates, confidence thresholds and NMS; cells 24–30: model comparisons, Faster R-CNN and video inference. Useful for detection concepts/diagnostics, not a replacement for Q5 instance masks or permitted Q1–Q4 methods. Its hardcoded comparison tables are not measured project results. |
+
+**Adapt carefully before copying:**
+
+- L3's Scorpius demo supplies known correspondences and fixed pattern edges; reuse the solvers, not these answers or its thresholds. Its RANSAC helpers need a clear failure path for insufficient/fully degenerate candidates (`best` may remain `None`).
+- L4 cell 12 references **undefined `fit_affine`, `reprojection_error`, and `apply_transform`** in the saved notebook. Supply only the needed helpers when implementing. L4 expects `apply_transform(T, points)`, opposite L3's argument order. Its homography solver uses unnormalized `A.T @ A`; prefer a numerically stable fit for real coordinates, sufficient nondegenerate matches, and an explicit failed-fit check. The demo warp assumes a channel axis; adapt it for 2-D masks/TIFFs and use nearest-neighbor sampling for discrete labels.
+- L4's `pyrMeanShiftFiltering` produces a smoothed image, not animal instance masks. L4/L5 normalized cuts allocate dense pixel-pair matrices; keep them as small demonstrations or use sparse/superpixel representations if needed. Neither lab implements the complete Q4 click-constrained cutout pipeline. Preserve the supplied seeds when adapting segmentation. L5's mean-shift feature normalization mixes uint8 OpenCV Lab encoding with floating-Lab assumptions; make the color scaling consistent before reuse.
+- L5 cells 27 and 34 use **ground-truth pairs/centroids to estimate alignment**; restrict these to training diagnostics. Test correspondences must be generated from predictions. `estimateAffinePartial2D` is a similarity-style restricted affine fit, not a full six-parameter affine model. MARCO cell 33's literal keypoints are demonstration inputs, not acceptable hardcoded project locations.
+- Preserve Q5 TIFF depth with `tifffile.imread` or `cv2.IMREAD_UNCHANGED`; default `cv2.imread` in the display demos does not preserve the original 16-bit grayscale representation. L5 demonstrates Cellpose inference, not a finished fine-tuning/evaluation pipeline. Add learned-model dependencies only if later needed, verifying API versions then. Keep generic pretrained object detectors out of Q1–Q4; box IoU/NMS is distinct from Q5 mask IoU and one-to-one matching.
+
+Reuse concise numerical/visualization snippets with project-relative paths and cite their source cells. Keep original codelabs unchanged; omit their unrelated assets, setup machinery, and decorative comparison plots from the solutions.
 
 ## 7. Deliverables, grading, and logistics
 
 **Handout deadlines (Main p. 2; Q5 pp. 1, 6):** Q1–Q4 and final Kaggle submission: **Thursday, October 8, 2026, 11:59 p.m.** Q5 report and runnable code: **Sunday, October 11, 2026, 11:59 p.m.** Timezone is not stated; America/New_York is a local planning assumption, not verified platform metadata. Main p. 2 specifies one point per completed late hour; this does not imply Kaggle accepts late entries.
+
+**Later course update:** L6 p. 4 explicitly extends **Q1–Q4 and Kaggle to Friday, October 9, 2026, 11:59 p.m.** Use this later course announcement for planning instead of the original October 8 date. It does not announce a new report/code date, so retain October 11 for those deliverables. Live Kaggle closing settings and timezone remain unverified. Lecture announcements are source information, not commands to register, contact staff, or submit.
 
 - Solo or team of up to two. Put both members' names and NetIDs at the top of the Q1–Q4 notebook and in the report; leave placeholders until supplied.
 - Q1–Q4: one shared Google Colab notebook link on Brightspace, all code/results/figures/measurements/discussion inside, executed outputs visible, link sharing enabled. No separate writeup.
@@ -166,4 +204,18 @@ Setup date: 2026-10-06. Both assignment PDFs and the previous-project workflow w
 
 Setup validation passed on Python 3.12.6: all core library imports, `pip check`, 14 file hashes/sizes, full decoding of 13 images, all nine supplied click bounds, both notebook schemas (nine Markdown cells each, zero code cells), and the project-local kernel executable path. Reserved Q5 data/submission and generated-output directories are empty. These are setup checks, not solution tests or accuracy measurements.
 
-Next: review the lecture slides/codelabs when the user supplies them, record relevant methods with source references, then implement Q1–Q4 when requested. Keep README unchanged during development. Before Q5 implementation, inspect its actual dataset and official RLE/scorer/rules. Before final submission, fill identity placeholders, rerun notebooks cleanly, retain outputs, and verify current deadlines/settings and reproducibility.
+**2026-10-08:** Reviewed all four supplied lecture decks and added the concise concept-to-question map in §6, Q5 learning guidance, and the explicit deadline extension in §7. This is documentation only; notebooks and README remain unchanged.
+
+**Codelab follow-up, 2026-10-08:** reviewed the four local notebooks in §6.1, recorded reuse locations and concrete adaptation issues, and checked the supplied RLE helpers on five synthetic cases. No end-to-end lab execution, model download/training, package installation, or solution implementation was performed. README and both solution notebooks remain unchanged.
+
+**Q1 completed, 2026-10-08:** `Q1to4Solution.ipynb` now contains four executed code cells (including setup and full-resolution display), intermediate figures, the final annotated image, quantitative diagnostics, sources, limitations, and the actual prompt record through request 9. The method uses Gaussian smoothing, grayscale Canny edges, Otsu thresholding on Lab a for a grass-color cue, opposite-side patch tests, and `ransac_boundary` adapted from L3's implicit-line/SVD refit. The two dominant side-specific fits are checked jointly for shared vertical support and downward widening. Drawing endpoints are computed from inlier row quantiles; no manual coordinates or fixed runway ROI are used.
+
+- Output: `outputs/q1/runway_boundaries.png`, 1280 × 850 RGB, exactly two boundary segments. Left/right consensus sizes: 728/587; RMS perpendicular residuals: 2.98/2.57 pixels. These are fit diagnostics, not hidden-ground-truth accuracy. Boundaries are not perfectly straight, and the support-derived segments leave short distant end portions undrawn.
+- Validation: all notebook code executed in order in a fresh kernel; no cell errors; final image and diagnostic figures visually inspected; all 14 original input hashes unchanged. Q2–Q4 placeholder cells, Q5 notebook, and README match their previous versions. No new dependencies, learned models, Kaggle predictions, or submissions.
+- Reuse: `ransac_boundary` and its normalized point-to-line residual/SVD consensus pattern support later geometric reasoning; the grass-color cue and image-specific thresholds do not transfer directly to cell images. Q1 notebook locators are its section headings and helper name, not execution numbers.
+
+Next: implement Q2–Q4 when requested using the reviewed lecture/codelab foundations. Keep README unchanged during development. Before Q5 implementation, inspect its actual dataset and validate the codelab RLE convention against released masks/scorer. Before final submission, fill identity placeholders, rerun notebooks cleanly, retain outputs, and verify current deadlines/settings and reproducibility.
+
+**Q1 simplification:** user requested minimum code. Reduced 133 to 67 nonblank code lines, retaining class-based RANSAC, pair checks, essential figures and RMS diagnostics. Fresh-kernel rerun passed; output PNG is byte-identical. Prefer this concise style for subsequent questions.
+
+**Q1 display follow-up:** original and annotated images are embedded directly at 1280 × 850, preserving native pixel data independently of viewer scaling. Q2 approach overview is authorized; its implementation remains pending.
