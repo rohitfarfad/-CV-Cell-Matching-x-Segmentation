@@ -69,3 +69,9 @@ Assistance: embed the original and annotated Q1 images at native 1280 × 850 res
 > Great, add the solution for question 2 in the notebook with minimum code and optimizing the token usage
 
 Assistance: implement a concise SIFT/ratio-test/RANSAC homography solution, warp and composite the replacement at original scene resolution, inspect the result, and document the small boundary mismatch caused by the curved cover. No manual coordinates or learned methods; README and Q3–Q5 remain unchanged.
+
+## Request 11 — 2026-10-08
+
+> You can add the code for question 2 to show important intermediate steps of the solution
+
+Assistance: add concise visualizations of ratio-test matches, RANSAC inliers, the projected cover boundary, compositing mask and warped artwork. Display subsets/crops are labeled and computed automatically; fitting and final compositing remain unchanged.
