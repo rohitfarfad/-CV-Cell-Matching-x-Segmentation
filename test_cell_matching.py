@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
-from cell_matching import decode_rle, encode_rle, mask_quality, summarize, register, match_cells, centers, evaluate, segment, clean_instances
+from cell_matching import decode_rle, encode_rle, mask_quality, summarize, register, register_cells, match_cells, centers, evaluate, segment, clean_instances
 
 
 class CellMatchingTests(unittest.TestCase):
@@ -128,6 +128,23 @@ class CellMatchingTests(unittest.TestCase):
         labels = segment(np.zeros((30, 30), np.uint16), denoise=True, multiscale=True, clean=True)
         self.assertEqual(labels.shape, (30, 30))
         self.assertEqual(labels.max(), 0)
+
+    def test_triangle_registration_and_blank(self):
+        rng = np.random.default_rng(19)
+        source = np.zeros((200, 200), np.int32)
+        target = np.zeros((280, 280), np.int32)
+        expected = np.array([[.98, .03, 35.], [-.04, .94, 40.]])
+        for label, (x, y) in enumerate(rng.integers(15, 180, (40, 2)), 1):
+            source[y-1:y+2, x-1:x+2] = label
+            px, py = np.rint(expected[:, :2] @ [x, y] + expected[:, 2]).astype(int)
+            target[py-1:py+2, px-1:px+2] = label
+        fitted, confidence = register_cells([source, target])
+        points = centers(source)
+        error = np.linalg.norm(points @ fitted[:, :2].T + fitted[:, 2]
+                               - (points @ expected[:, :2].T + expected[:, 2]), axis=1)
+        self.assertLess(np.median(error), 1)
+        self.assertGreater(confidence, .8)
+        self.assertEqual(register_cells([source*0, target*0]), (None, 0.))
 
 
 if __name__ == '__main__':

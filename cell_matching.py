@@ -288,8 +288,8 @@ PARAMETERS = {
 
 REFINED_PARAMETERS = {
     'invivo': PARAMETERS['invivo'] | dict(denoise=True, multiscale=True, fraction=.2, clean=True),
-    'exvivo': PARAMETERS['exvivo'] | dict(denoise=True, blobness=.45, clean=True),
-    'matching': dict(method='triangles', gate=8, cutoff=.16, guard=False, shape_weight=2),
+    'exvivo': PARAMETERS['exvivo'] | dict(denoise=True, fraction=.2, clean=True),
+    'matching': dict(method='triangles', gate=8, cutoff=.16, guard=True, shape_weight=2),
 }
 
 
