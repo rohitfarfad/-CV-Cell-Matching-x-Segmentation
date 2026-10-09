@@ -87,3 +87,15 @@ Assistance: inspect all six inputs and outline feature-based distortion correcti
 > Great, let's add the solution to the notebook, keep the code minimum but include the important intermediate steps to the final solution, add final solution image in original dimentions
 
 Assistance: implement Q3 with automatic padding-based distortion identification, SIFT/RANSAC overlap estimation, transform composition, image-derived cylindrical projection and feather blending. The cylinder addresses an observed projective-horizon failure in a flat-canvas trial. Include intermediate figures and the full-resolution panorama; document calibration assumptions and residual limitations. No hard-coded transforms/order, manual alignment, or high-level stitcher.
+
+## Request 14 — 2026-10-08
+
+> similarly give the overview of solution for question 4
+
+Assistance: inspect the wildlife images and JSON clicks, and outline click-initialized GrabCut, conservative component cleanup, intermediate displays and original-resolution RGBA export.
+
+## Request 15 — 2026-10-08
+
+> Great let's code this into the notebook like previous questions
+
+Assistance: implement classical click-guided GrabCut, compare initialization/spatial and edge-aware alternatives on the supplied images, and retain a common RGB-plus-spatial-cut baseline. Add diagnostic figures, original-resolution RGBA outputs, and explicit caveats about retained background and missing animal parts. No extra manual annotations or learned semantic models; image quality remains insufficient for a claim of complete animal isolation.
