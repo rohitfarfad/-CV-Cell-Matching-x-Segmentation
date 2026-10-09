@@ -99,3 +99,13 @@ Assistance: inspect the wildlife images and JSON clicks, and outline click-initi
 > Great let's code this into the notebook like previous questions
 
 Assistance: implement classical click-guided GrabCut, compare initialization/spatial and edge-aware alternatives on the supplied images, and retain a common RGB-plus-spatial-cut baseline. Add diagnostic figures, original-resolution RGBA outputs, and explicit caveats about retained background and missing animal parts. No extra manual annotations or learned semantic models; image quality remains insufficient for a claim of complete animal isolation.
+
+## Request 16 — Q4 refinement
+
+> current solution is good but it's still very choppy and isn't very clode to the expected segments, in the first one the segment include large part of the tree along with the lizard, in second the large portion of the leopard's face is missing as well as the rear part and tail and part of rock and backgroud is also included, in third the the part of the tree is visible. Try to fix this, part of the problem it seems the subjects are clamoflaged well in the background. Try to resolve this issue without hardcoding the solutions. Try any other concepts of tricks from the lecture, use external knowledge if necessary. Course is derived from the Computer Vision: Algorithms and Applications textbook by Richard Szeliski. Check it for reference if anything from there might be usefule. Try to keep the code changes minimum and optimize the token usage.
+
+## Request 17 — 2026-10-09
+
+> Continue the work
+
+Assistance: review Szeliski §§5.4–5.5 (February 2010 draft), compare classical texture/graph alternatives, and replace the Q4 color-cut intersection with shared Lab/Gabor superpixel geodesic segmentation and original-resolution GrabCut boundary refinement. No manual coordinates, mask corrections, learned models, new packages or per-image algorithm branches. Retain intermediate figures and explain both visual improvements and remaining bark/rock leakage and missing tail detail. README, Q1–Q3 implementation and Q5 remain unchanged.
