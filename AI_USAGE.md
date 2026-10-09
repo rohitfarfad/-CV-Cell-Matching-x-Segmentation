@@ -121,3 +121,15 @@ Assistance: inspected Q5 handout and L5 RLE/registration examples; attempted off
 > I have downloaded and copied the data in /Data directory
 
 Assistance: verified the user-provided Q5 dataset and recorded 154 hashes; implemented a traditional blob/Hessian/watershed segmentation and correlation/RANSAC/Hungarian matching pipeline in `cell_matching.py`, with notebook diagnostics and a CSV generator. Compared segmentation and registration variants on development mice, selected shared modality parameters on 29 development regions, froze them before evaluating the remaining 18 regions, and retained all test IDs for submission generation. Six synthetic contract tests cover RLE, strict mask IoU, pair scoring, pooled F1, unmatched cells and image translation; these are not accuracy measurements. No learned models, test labels, manual corrections or per-test-ID tuning. The requested 0.70 score is a target, not an achieved or guaranteed result. Actual results are recorded in the notebook and `outputs/q5/validation_summary.csv`. No Kaggle upload performed.
+
+## Request 20 — 2026-10-09
+
+The user supplied the Lecture 6 “Tips and Tricks for Project 2” slide.
+
+> try to improve the score, try the tips and tricks mentioned in lecture 6
+
+## Request 21 — 2026-10-09
+
+> continue the work, optimize the token usage
+
+Assistance: apply the slide's traditional-method guidance: reject elongated masks, search affine initialization with unequal scales and shear, refine using close mutual predicted-centroid matches and full-affine RANSAC ICP, retain Hungarian one-to-one matching, and add warped-image overlays. Compare new shape/gating choices with leave-one-mouse-out selection. Since earlier development already inspected these mice, call the results retrospective grouped validation, not a new untouched test. Preserve the traditional-only restriction; do not use the slide's neural fine-tuning, Dice/focal-loss or pretrained-model suggestions. Actual scores and checks are recorded in the notebook and AGENTS.md.

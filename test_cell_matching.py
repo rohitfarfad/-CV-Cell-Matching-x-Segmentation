@@ -1,5 +1,6 @@
 """Small contract tests; these do not measure real-image accuracy."""
 import unittest
+import cv2
 import json
 import numpy as np
 import pandas as pd
@@ -65,6 +66,40 @@ class CellMatchingTests(unittest.TestCase):
         error = np.linalg.norm(xy[:, ::-1] @ matrix[:, :2].T + matrix[:, 2] - (xy[:, ::-1]+[40, 60]), axis=1)
         self.assertLess(np.median(error), 3)
         self.assertGreater(score, .5)
+
+    def test_affine_registration(self):
+        rng = np.random.default_rng(4)
+        source = np.zeros((128, 128), np.float32)
+        points = rng.integers(12, 116, (40, 2))
+        source[points[:, 1], points[:, 0]] = 1
+        source = ndi.gaussian_filter(source, 2)
+        source = (source/source.max()*65535).astype(np.uint16)
+        expected = np.array([[.98, .07, 40.], [-.1, .88, 60.]])
+        target = cv2.warpAffine(source, expected, (256, 256))
+        matrix, confidence = register(source, target)
+        error = np.linalg.norm(points @ matrix[:, :2].T + matrix[:, 2]
+                               - (points @ expected[:, :2].T + expected[:, 2]), axis=1)
+        self.assertLess(np.median(error), 3)
+        self.assertGreater(confidence, .5)
+
+    def test_affine_icp(self):
+        source = np.zeros((128, 128), np.int32)
+        target = np.zeros_like(source)
+        points = np.array([(x, y) for x in [15, 50, 85] for y in [15, 50, 85]])
+        expected = np.array([[1., .04, 8.], [.02, .95, 10.]])
+        destination = np.rint(points @ expected[:, :2].T + expected[:, 2]).astype(int)
+        for label, (a, b) in enumerate(zip(points, destination), 1):
+            source[a[1], a[0]] = label
+            target[b[1], b[0]] = label
+        pairs, fitted = match_cells(source, target, np.array([[1., 0., 8.], [0., 1., 10.]]), gate=2)
+        self.assertEqual(len(pairs), 9)
+        self.assertLess(np.max(np.linalg.norm(points @ fitted[:, :2].T + fitted[:, 2] - destination, axis=1)), 1)
+
+    def test_blank_registration(self):
+        blank = np.zeros((128, 128), np.uint16)
+        matrix, confidence = register(blank, blank)
+        self.assertIsNone(matrix)
+        self.assertEqual(confidence, 0)
 
 
 if __name__ == '__main__':

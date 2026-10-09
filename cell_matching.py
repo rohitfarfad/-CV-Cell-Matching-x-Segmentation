@@ -8,6 +8,7 @@ from scipy import ndimage as ndi
 from scipy.spatial import cKDTree
 from scipy.optimize import linear_sum_assignment
 from skimage.feature import peak_local_max
+from skimage.measure import regionprops_table
 from skimage.segmentation import watershed, relabel_sequential
 
 
@@ -42,7 +43,7 @@ def normalize(image):
     return np.clip((image.astype(np.float32) - low) / max(high-low, 1), 0, 1).astype(np.float32)
 
 
-def segment(image, sigma=2.5, threshold=.025, fraction=.3, min_area=25, max_area=350, blobness=0, dilation=0):
+def segment(image, sigma=2.5, threshold=.025, fraction=.3, min_area=25, max_area=350, blobness=0, dilation=0, max_elongation=3):
     image = normalize(image)
     smooth = ndi.gaussian_filter(image, 1)
     signal = np.maximum(smooth - ndi.gaussian_filter(image, 10), 0)
@@ -67,6 +68,9 @@ def segment(image, sigma=2.5, threshold=.025, fraction=.3, min_area=25, max_area
     if dilation:
         from skimage.segmentation import expand_labels
         labels = expand_labels(labels, distance=dilation)
+    props = regionprops_table(labels, properties=["label", "axis_major_length", "axis_minor_length"])
+    ratio = props["axis_major_length"] / np.maximum(props["axis_minor_length"], 1)
+    labels[np.isin(labels, props["label"][ratio > max_elongation])] = 0
     return relabel_sequential(labels)[0].astype(np.int32)
 
 
@@ -103,35 +107,39 @@ def centers(labels):
 
 
 def register(source, target):
-    """Coarse-to-fine image correlation; returns source -> target affine map."""
+    """Search rotation, unequal scales, shear and translation; source -> target."""
+    from itertools import product
     def response(image):
         image = normalize(image)
-        band = ndi.gaussian_filter(image, 2) - ndi.gaussian_filter(image, 6)
-        return cv2.resize(band, None, fx=.25, fy=.25, interpolation=cv2.INTER_AREA)
+        band = np.maximum(ndi.gaussian_filter(image, 2) - ndi.gaussian_filter(image, 6), 0)
+        return cv2.resize(band, None, fx=.33, fy=.33, interpolation=cv2.INTER_AREA)
     a, b = response(source), response(target)
+    if min(a.std(), b.std()) < 1e-8:
+        return None, 0.
     h, w = a.shape
-    best = (-1., None, 0., 1.)
-    searches = [(np.arange(-40, 41, 5), [.8, 1., 1.2])]
+    corners = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+    best = (-1., None, (0., 1., 1., 0.))
     for stage in range(2):
-        if stage:
-            searches.append((best[2] + np.arange(-4, 5, 2), best[3] + np.arange(-.1, .11, .05)))
-        angles, scales = searches[stage]
-        for angle in angles:
-            for scale in scales:
-                matrix = cv2.getRotationMatrix2D((w/2, h/2), float(angle), float(scale))
-                corners = np.float32([[0, 0], [w, 0], [w, h], [0, h]]) @ matrix[:, :2].T + matrix[:, 2]
-                low, high = np.floor(corners.min(0)), np.ceil(corners.max(0))
-                matrix[:, 2] -= low
-                template = cv2.warpAffine(a, matrix, tuple((high-low).astype(int)))
-                if any(x > y for x, y in zip(template.shape, b.shape)):
-                    continue
-                _, score, _, position = cv2.minMaxLoc(cv2.matchTemplate(b, template, cv2.TM_CCOEFF_NORMED))
-                if score > best[0]:
-                    matrix[:, 2] += position
-                    best = (score, matrix.copy(), angle, scale)
+        if stage == 0:
+            grid = [np.arange(-20, 21, 2), [.9, 1., 1.1], [.8, .9, 1.], [-.1, 0., .1]]
+        else:
+            grid = [value + np.array([-step, 0, step])
+                    for value, step in zip(best[2], [1, .03, .03, .05])]
+        for angle, sx, sy, shear in product(*grid):
+            linear = cv2.getRotationMatrix2D((0, 0), float(angle), 1)[:, :2] @ [[sx, shear], [0, sy]]
+            warped = corners @ linear.T
+            low, high = np.floor(warped.min(0)), np.ceil(warped.max(0))
+            matrix = np.c_[linear, -low]
+            template = cv2.warpAffine(a, matrix, tuple((high-low).astype(int)))
+            if any(x > y for x, y in zip(template.shape, b.shape)):
+                continue
+            _, score, _, position = cv2.minMaxLoc(cv2.matchTemplate(b, template, cv2.TM_CCOEFF_NORMED))
+            if score > best[0]:
+                matrix[:, 2] += position
+                best = (score, matrix.copy(), (angle, sx, sy, shear))
     matrix = best[1]
     if matrix is not None:
-        matrix[:, 2] /= .25
+        matrix[:, 2] /= .33
     return matrix, best[0]
 
 
@@ -141,7 +149,7 @@ def match_cells(source_labels, target_labels, matrix, gate=6):
     if matrix is None or min(len(a), len(b)) < 3:
         return [], matrix
     tree = cKDTree(b)
-    for _ in range(3):
+    for _ in range(5):
         warped = a @ matrix[:, :2].T + matrix[:, 2]
         distance, nearest = tree.query(warped)
         _, reverse = cKDTree(warped).query(b)
@@ -149,9 +157,11 @@ def match_cells(source_labels, target_labels, matrix, gate=6):
         if keep.sum() < 6:
             break
         cv2.setRNGSeed(7)
-        fitted, inliers = cv2.estimateAffinePartial2D(a[keep], b[nearest[keep]], method=cv2.RANSAC,
+        fitted, inliers = cv2.estimateAffine2D(a[keep], b[nearest[keep]], method=cv2.RANSAC,
                                                     ransacReprojThreshold=3)
         if fitted is None or inliers.sum() < 6:
+            break
+        if np.linalg.det(fitted[:, :2]) <= 0 or np.linalg.cond(fitted[:, :2]) > 3:
             break
         matrix = fitted
     distance = np.linalg.norm((a @ matrix[:, :2].T + matrix[:, 2])[:, None] - b, axis=2)
@@ -184,11 +194,11 @@ def instances(labels, prefix):
     return {f'{prefix}_{i:06d}': encode_rle(labels == i) for i in range(1, labels.max()+1)}
 
 
-# Selected on the two development mice; frozen before held-out evaluation.
+# Base detector settings retained; Lecture 6 shape/gate choices use grouped development validation.
 PARAMETERS = {
-    'invivo': dict(sigma=2.5, threshold=.025, fraction=.15, dilation=1),
-    'exvivo': dict(sigma=3, threshold=.12, fraction=.15, blobness=.6),
-    'matching': dict(gate=6, cutoff=.1),
+    'invivo': dict(sigma=2.5, threshold=.025, fraction=.15, dilation=1, max_elongation=3),
+    'exvivo': dict(sigma=3, threshold=.12, fraction=.15, blobness=.6, max_elongation=3),
+    'matching': dict(gate=8, cutoff=.14),
 }
 
 
@@ -216,7 +226,7 @@ def validate_submission(frame, sample, root):
                 assert mask.any() and encode_rle(mask) == rle
 
 
-def write_submission(root='Data', output='Kaggle Submissions/classical_submission.csv'):
+def write_submission(root='Data', output='Kaggle Submissions/classical_lecture6.csv'):
     import pandas as pd
     root = Path(root)
     sample = pd.read_csv(root / 'sample_submission.csv', dtype=str, keep_default_na=False)
@@ -242,6 +252,6 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data', default='Data')
-    parser.add_argument('--output', default='Kaggle Submissions/classical_submission.csv')
+    parser.add_argument('--output', default='Kaggle Submissions/classical_lecture6.csv')
     args = parser.parse_args()
     write_submission(args.data, args.output)
