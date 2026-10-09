@@ -133,3 +133,9 @@ The user supplied the Lecture 6 “Tips and Tricks for Project 2” slide.
 > continue the work, optimize the token usage
 
 Assistance: apply the slide's traditional-method guidance: reject elongated masks, search affine initialization with unequal scales and shear, refine using close mutual predicted-centroid matches and full-affine RANSAC ICP, retain Hungarian one-to-one matching, and add warped-image overlays. Compare new shape/gating choices with leave-one-mouse-out selection. Since earlier development already inspected these mice, call the results retrospective grouped validation, not a new untouched test. Preserve the traditional-only restriction; do not use the slide's neural fine-tuning, Dice/focal-loss or pretrained-model suggestions. Actual scores and checks are recorded in the notebook and AGENTS.md.
+
+## Request 22 — 2026-10-09
+
+> this is no where close to required, Just as an experiment try small U-Net cnn model in separate notebook
+
+Assistance: create `SmallUNetExperiment.ipynb` as an explicitly authorized neural experiment while preserving the classical solution. Install optional PyTorch, implement two small U-Nets from scratch for the modalities, train fixed-budget models on two mice using foreground/core supervision, augmented cell/background patches and BCE + Dice loss, and evaluate the excluded mouse with fixed postprocessing and unchanged classical registration/matching. Save checkpoints, metrics and figures separately. No pretrained weights, external data or Kaggle upload; the previously inspected evaluation mouse is not claimed as a fresh independent test. Actual scores are recorded in the notebook and experiment outputs.

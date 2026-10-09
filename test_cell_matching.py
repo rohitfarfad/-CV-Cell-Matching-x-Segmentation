@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 from scipy import ndimage as ndi
-from cell_matching import decode_rle, encode_rle, mask_quality, summarize, register, match_cells, centers, evaluate
+from cell_matching import decode_rle, encode_rle, mask_quality, summarize, register, match_cells, centers, evaluate, segment, clean_instances
 
 
 class CellMatchingTests(unittest.TestCase):
@@ -100,6 +100,34 @@ class CellMatchingTests(unittest.TestCase):
         matrix, confidence = register(blank, blank)
         self.assertIsNone(matrix)
         self.assertEqual(confidence, 0)
+
+    def test_instance_cleanup_preserves_neighbors(self):
+        labels = np.zeros((15, 15), np.int32)
+        labels[2:9, 2:9] = 1
+        labels[4:7, 4:7] = 0
+        labels[5, 5] = 2
+        labels[12, 12] = 1
+        cleaned = clean_instances(labels)
+        self.assertEqual(cleaned[5, 5], 2)
+        self.assertEqual(cleaned[4, 4], 1)
+        self.assertEqual(cleaned[12, 12], 0)
+        self.assertEqual(ndi.label(cleaned == 1)[1], 1)
+
+    def test_shape_cost_can_leave_a_cell_unmatched(self):
+        source = np.zeros((30, 30), np.int32)
+        for label, (y, x) in enumerate([(5, 5), (20, 5), (5, 20)], 1):
+            source[y-1:y+2, x-1:x+2] = label
+        target = source.copy()
+        target[target == 1] = 0
+        target[5, 5] = 1
+        identity = np.array([[1., 0., 0.], [0., 1., 0.]])
+        pairs, _ = match_cells(source, target, identity, gate=3, guard=True, shape_weight=3)
+        self.assertEqual(pairs, [(2, 2), (3, 3)])
+
+    def test_refined_segmentation_blank_image(self):
+        labels = segment(np.zeros((30, 30), np.uint16), denoise=True, multiscale=True, clean=True)
+        self.assertEqual(labels.shape, (30, 30))
+        self.assertEqual(labels.max(), 0)
 
 
 if __name__ == '__main__':

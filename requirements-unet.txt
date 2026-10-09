@@ -1,0 +1,2 @@
+# Optional dependency for SmallUNetExperiment.ipynb; install core requirements.txt first.
+torch==2.14.1
