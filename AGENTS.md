@@ -6,7 +6,7 @@ NYU Tandon, CS-GY 6643 Computer Vision, Fall 2026. This workspace covers Project
 
 **User workflow:** Complete Q1–Q4 first in `Q1to4Solution.ipynb`, using the reviewed lecture slides and local codelab snippets described in §6. Then develop Q5 in `CellMatchingSegmentation.ipynb`, building on the relevant concepts and small reusable snippets from Q1–Q4.
 
-**Current authorization includes Q1–Q4 implementation:** after source review and an approach overview, the user requested “great, let's code it in the notebook” on 2026-10-08. Q1–Q4 have executable pipelines in `Q1to4Solution.ipynb`; Q4 segmentation remains an imperfect baseline, and Q5 remains a placeholder. Preserve the completed Q1 work and the user's minimal-code preference.
+**Current authorization includes Q1–Q5 implementation:** after source review and an approach overview, the user requested “great, let's code it in the notebook” on 2026-10-08. Q1–Q4 have executable pipelines in `Q1to4Solution.ipynb`; Q4 segmentation remains imperfect; the user subsequently authorized a traditional-only Q5 solution with a target combined score of 0.70. Preserve the completed Q1 work and the user's minimal-code preference.
 
 **Keep code simple and minimal.** Prefer straightforward notebook cells, clear variable names, and a few short functions. Add a helper `.py` file only when actual reuse or the eventual runnable Q5 submission justifies it. Avoid frameworks, unnecessary classes, configuration layers, speculative fallbacks, elaborate caching, and extra dependencies. Minimal means easy to understand, not compressed or cryptic. Start with the simplest class-based method and add complexity only to address an observed failure.
 
@@ -86,7 +86,7 @@ The notebook kernel is `Python (CV Project 2)`, installed inside `.venv`, not gl
 
 Read actual image sizes and the JSON schema before implementation. `(x, y)` means column, row for supplied clicks; array indexing is `[y, x]`. Keep color order, mask dimensions, image coordinates, and warp direction explicit. Do not infer hidden ground truth or claim accuracy against it from visual inspection.
 
-In the shared notebook, keep each question's inputs, explanation, code, immediate final result, and supporting measurements/discussion together. Run from a clean kernel and retain executed outputs for final submission. Q1–Q4 contain executable code/results; Q5 remains a scaffold. Q4 mask quality requires further work.
+In the shared notebook, keep each question's inputs, explanation, code, immediate final result, and supporting measurements/discussion together. Run from a clean kernel and retain executed outputs for final submission. Q1–Q5 contain executable code/results. Q4 mask quality requires further work.
 
 ## 5. Q5: cell matching and segmentation
 
@@ -94,7 +94,7 @@ In the shared notebook, keep each question's inputs, explanation, code, immediat
 
 Cell appearance changes across modalities due to deformation, optics, contrast, sectioning, and missing cells. Ex-vivo processes can be as bright as cell bodies. Use spatial/morphological evidence as well as intensity. Each cell requires a separate instance mask; a single foreground/background mask is insufficient. Different full-image sizes do not directly imply the same scale ratio for cell size: the handout reports median cell areas of 86 pixels in vivo and 71 pixels ex vivo.
 
-**Handout dataset description (pp. 7–9; not yet locally verified):**
+**Dataset description (handout pp. 7–9; locally verified 2026-10-09):**
 
 ```text
 Data/
@@ -108,7 +108,7 @@ Data/
   sample_submission.csv
 ```
 
-Training: 47 regions from 3 mice, 14,893 in-vivo cells, 5,516 ex-vivo cells, and 1,139 verified pairs. Hidden test: 29 regions from 2 mice. A cell absent from the verified correspondence list is **unverified, not a confirmed negative**. Training CSV columns match the submission schema below. Q5 data is not part of this task's requested downloads; `Data/` is reserved and currently empty.
+Training: 47 regions from 3 mice, 14,893 in-vivo cells, 5,516 ex-vivo cells, and 1,139 verified pairs. Hidden test: 29 regions from 2 mice. A cell absent from the verified correspondence list is **unverified, not a confirmed negative**. Training CSV columns match the submission schema below. The user supplied Q5 data under `Data/`; 152 TIFFs and two CSVs were checked and hashed in `DATA_SOURCES.json`.
 
 **Metric (pp. 5–6):**
 
@@ -214,7 +214,7 @@ Setup validation passed on Python 3.12.6: all core library imports, `pip check`,
 - Validation: all notebook code executed in order in a fresh kernel; no cell errors; final image and diagnostic figures visually inspected; all 14 original input hashes unchanged. Q2–Q4 placeholder cells, Q5 notebook, and README match their previous versions. No new dependencies, learned models, Kaggle predictions, or submissions.
 - Reuse: `ransac_boundary` and its normalized point-to-line residual/SVD consensus pattern support later geometric reasoning; the grass-color cue and image-specific thresholds do not transfer directly to cell images. Q1 notebook locators are its section headings and helper name, not execution numbers.
 
-Next: improve Q2 boundary alignment and Q4 mask quality before submission; develop Q5 when requested using the reviewed foundations. Keep README unchanged during development. Before Q5 implementation, inspect its actual dataset and validate the codelab RLE convention against released masks/scorer. Before final submission, fill identity placeholders, rerun notebooks cleanly, retain outputs, and verify current deadlines/settings and reproducibility.
+Next: improve Q2 boundary alignment and Q4 mask quality before submission; develop Q5 when requested using the reviewed foundations. Keep README unchanged during development. Q5 input inventory and released-mask RLE checks are complete; the official scorer remains unavailable. Before final submission, fill identity placeholders, rerun notebooks cleanly, retain outputs, and verify current deadlines/settings and reproducibility.
 
 **Q1 simplification:** user requested minimum code. Reduced 133 to 67 nonblank code lines, retaining class-based RANSAC, pair checks, essential figures and RMS diagnostics. Fresh-kernel rerun passed; output PNG is byte-identical. Prefer this concise style for subsequent questions.
 
@@ -241,3 +241,13 @@ Q4 validation: fresh-kernel execution and notebook schema passed; all three PNGs
 **Q4 refinement, 2026-10-09:** replaced the color-cut intersection with Lab + oriented Gabor texture averaged over SLIC regions, sparse appearance-weighted geodesic label propagation, and original-resolution GrabCut boundary refinement. Consulted [Szeliski, February 2010 draft](https://www.cs.jhu.edu/~ayuille/courses/Stat238-Winter10/SzeliskiBook_20100227_draft.pdf), §§5.4–5.5, printed pp. 295–301. This is a project adaptation of texture affinities/geodesic and graph-cut concepts, with one shared parameter set and only the supplied clicks. No new dependencies. More leopard face/rear and less owl/lizard bark are retained, but missing tails and rock/bark leakage remain; Q4 is still not submission-ready. Native refinement cannot correct locked-in coarse interior mistakes. Preserve these limitations and do not interpret file/seed checks as semantic accuracy. Prompt record includes requests 16–17.
 
 Refinement validation: full notebook executed in a fresh kernel (28.5 seconds), with no cell errors and valid notebook schema. Visually inspected all three final diagnostic figures. Verified native-size embedded/exported RGBA PNGs, binary alpha, identical source colors and all nine opaque clicks; all 14 input hashes, Q1–Q3 output hashes, README and Q5 notebook remain unchanged. These checks establish reproducibility/file correctness, not semantic segmentation accuracy.
+
+**Q5 authorization/access, 2026-10-09:** user now requests the competition solution at https://www.kaggle.com/competitions/testingpj-2 using **only traditional computer vision**, minimal code and a target score of 0.70. This overrides optional learned-method suggestions for this task. Read target as the handout's combined PQ/F1 score, not pixel accuracy; do not promise it. Data remains empty; official Kaggle data-list API returned HTTP 401, no local Kaggle credentials were found, no browser was available, and inspected Downloads archives contained no Q5 data. Requested a local dataset path/download. Q5 notebook now contains an executable dataset/schema check and codelab-derived RLE helpers; actual data verification, segmentation/matching implementation, validation and CSV generation remain pending. Do not reuse training ground-truth pairs for test-time registration. README and Q1–Q4 remain unchanged. Prompt record includes request 18.
+
+**Q5 classical baseline, 2026-10-09:** implemented `cell_matching.py` (shared modality parameters, no sample-specific predictions), executable `CellMatchingSegmentation.ipynb`, six contract tests, and `Kaggle Submissions/classical_submission.csv` with all 29 official sample IDs. Pipeline: percentile normalization, DoG peaks, ex-vivo Hessian blob filtering, watershed, regional threshold/area checks, in-vivo one-pixel expansion; coarse/fine correlation registration, predicted-centroid RANSAC refinement and gated Hungarian assignment. No new dependencies or learned methods. Input bounds/dimensions/dtype, 20,409 masks and 1,139 verified pairs were checked; 154 Q5 input hashes are recorded in DATA_SOURCES.json. The released RLEs align visually with the codelab's zero-based row-major convention. Live rules/scorer remain unverified.
+
+Parameters were selected on 29 regions from the two development mice and frozen before evaluation on 18 regions from `subject_db6b8b`. Development combined score: 0.1393. **Held-out local score: 0.1600; PQ in vivo 0.4089, PQ ex vivo 0.2309, matching F1 0.0000. The requested 0.70 target was NOT achieved.** Only 99/562 verified held-out pairs are mask-recoverable; with these fixed masks even perfect matching is bounded by approximately 0.310. This is an unsuccessful accuracy target, not a submission-ready competition solution or a leaderboard result. Preserve the honest measurements. Do not tune on this held-out mouse and continue calling it untouched; use a new nested/grouped validation design if further development uses its results.
+
+Artifacts: per-region/summary metrics, development selection tables, example native-size label TIFFs and diagnostic figures under `outputs/q5/`; source code and notebook run from project-relative Data paths. Full notebook fresh-kernel execution passed (83.3 seconds). Six tests passed for RLE bounds/round trips, strict IoU, pair scoring, pooled F1, unmatched assignment and synthetic registration. No Kaggle submission/selection, code push, README update or Q1–Q4 modification. Prompt record includes request 19.
+
+Final Q5 verification: standalone CLI regenerated a byte-identical candidate CSV; all 29 rows passed native-dimension RLE round trips, pair-reference/uniqueness and CSV schema checks. All 168 Q1–Q5 original file hashes remain unchanged. Notebook outputs are retained; no code cells have errors.
