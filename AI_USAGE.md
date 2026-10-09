@@ -75,3 +75,15 @@ Assistance: implement a concise SIFT/ratio-test/RANSAC homography solution, warp
 > You can add the code for question 2 to show important intermediate steps of the solution
 
 Assistance: add concise visualizations of ratio-test matches, RANSAC inliers, the projected cover boundary, compositing mask and warped artwork. Display subsets/crops are labeled and computed automatically; fitting and final compositing remain unchanged.
+
+## Request 12 — 2026-10-08
+
+> Great, similary give the overview of solution for question 3 before coding
+
+Assistance: inspect all six inputs and outline feature-based distortion correction, overlap inference, transform composition, canvas calculation and blending. No solution code added in that turn.
+
+## Request 13 — 2026-10-08
+
+> Great, let's add the solution to the notebook, keep the code minimum but include the important intermediate steps to the final solution, add final solution image in original dimentions
+
+Assistance: implement Q3 with automatic padding-based distortion identification, SIFT/RANSAC overlap estimation, transform composition, image-derived cylindrical projection and feather blending. The cylinder addresses an observed projective-horizon failure in a flat-canvas trial. Include intermediate figures and the full-resolution panorama; document calibration assumptions and residual limitations. No hard-coded transforms/order, manual alignment, or high-level stitcher.
