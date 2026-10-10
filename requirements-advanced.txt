@@ -1,0 +1,5 @@
+# Install after requirements.txt and requirements-unet.txt in the core environment.
+# Geometry/CPD are used by the GPU-native distance and StarDist-style experiments.
+stardist==0.9.2
+csbdeep==0.8.2
+pycpd==2.0.0

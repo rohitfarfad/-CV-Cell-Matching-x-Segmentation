@@ -1,0 +1,2 @@
+# Optional CPD matching refinement; install after requirements.txt.
+pycpd==2.0.0

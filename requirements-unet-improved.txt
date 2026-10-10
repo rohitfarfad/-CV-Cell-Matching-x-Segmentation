@@ -1,0 +1,3 @@
+# Install after requirements.txt and requirements-unet.txt.
+# Optional nonrigid matching refinement and benchmark.
+pycpd==2.0.0

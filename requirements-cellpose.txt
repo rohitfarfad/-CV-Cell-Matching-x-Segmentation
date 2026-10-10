@@ -1,0 +1,6 @@
+# Separate .venv-cellpose environment; see AdvancedCellMatching.ipynb setup.
+cellpose==3.1.1.3
+numpy==2.0.2
+tifffile==2026.4.11
+roifile==2026.2.10
+imagecodecs==2026.3.6
