@@ -1,2 +1,2 @@
-# Optional dependency for SmallUNetExperiment.ipynb; install core requirements.txt first.
+# Optional dependency for SmallUNetExperiment.ipynb and unet_cells.py; install core requirements.txt first.
 torch==2.14.1
