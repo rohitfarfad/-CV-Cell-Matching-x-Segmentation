@@ -214,3 +214,11 @@ The user supplied the submission identities in a follow-up:
 Assistance: rewrite Q1–Q4 explanations in a natural shared “we” voice, remove lecture/codelab/textbook attributions from the solution narrative, add the supplied names and NetIDs, and remove development-only notes and the stale Q5 section. Keep the required AI disclosure and actual historical prompts verbatim in a collapsible appendix. No algorithms or prediction masks changed.
 
 Validation: all17 code cells executed in order in a fresh kernel with no errors; code sources,14 original Q1–Q4 inputs and6 output PNGs are unchanged. Q4 native dimensions, original colors, binary alpha and all9 supplied foreground clicks checked. README, Q5 notebooks and DATA_SOURCES.json unchanged. Notebook presentation is finalized; existing Q2 curved-cover edge mismatch and Q4 missing animal parts/background leakage remain explicitly described. No upload, sharing change or submission performed.
+
+## Request 33 — 2026-10-09
+
+> Let's try the project using the Unet again, let try quick fixes and try to improve the score empasis on speed
+
+Assistance: reuse saved U-Net masks and checkpoints, compare12 small matching configurations on47 excluded-mouse regions, and select a confidence cutoff plus mutual-nearest-neighbor filter. No retraining, additional model inference, new dependency or Kaggle upload. Add runnable `unet_quick.py` and an executed quick-pass section in `AdvancedCellMatching.ipynb`; update the earlier preservation check to the current authorized project snapshot.
+
+Outcome: retrospective grouped local S0.3935 versus0.3753; optimistic all-data-selected S0.3956 versus0.3914. Grouped selection uses fixed context128_tta masks throughout, whereas previous grouped selection could choose another saved inference variant. These results are development comparisons, not untouched validation or public scores. Selected gate8/cutoff0.28/mutual filtering generates `unet_quick.csv`:29rows,8954/4176 masks,347pairs,18zero-pair regions.23 tests pass;3 new notebook code cells execute in a fresh kernel in106.4seconds. Native RLE/IDs/one-to-one/CSV checks pass; mask columns exactly equal the earlier improved candidate.168 original inputs and23 protected artifacts unchanged. Evidence: `outputs/q5/unet_quick/verification.json`. Target0.65 remains unmet; no new Kaggle score.

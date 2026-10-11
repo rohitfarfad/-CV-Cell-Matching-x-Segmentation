@@ -8,6 +8,29 @@ from unet_cells import SmallUNet, loss_function, probabilities, instances_from_p
 
 
 class UNetTests(unittest.TestCase):
+    def test_refinement_preserves_default_instance_contract(self):
+        from unet_refined import refined_instances
+        probability=np.zeros((2,30,40),np.float32)
+        probability[0,6:22,4:30]=.9
+        probability[1,9:19,7:14]=.9
+        probability[1,9:19,20:27]=.9
+        np.testing.assert_array_equal(refined_instances(probability,[5,500]),
+                                      instances_from_probabilities(probability,[5,500]))
+        for method in ['threshold','smooth','peaks','probability']:
+            empty=refined_instances(np.zeros_like(probability),[5,500],method=method)
+            self.assertEqual(empty.max(),0)
+
+    def test_smoothing_rejects_isolated_confident_pixel(self):
+        from unet_refined import refined_instances
+        probability=np.zeros((2,25,30),np.float32)
+        probability[:,5:12,5:12]=.9
+        probability[:,20,24]=.9
+        raw=refined_instances(probability,[1,500],threshold=.6)
+        smooth=refined_instances(probability,[1,500],threshold=.6,method='smooth')
+        self.assertGreater(raw[20,24],0)
+        self.assertEqual(smooth[20,24],0)
+        self.assertGreater(smooth[8,8],0)
+
     def test_gradients_and_checkpoint(self):
         torch.manual_seed(7)
         model = SmallUNet()
