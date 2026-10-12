@@ -1,0 +1,288 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=0.85in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype,amsmath,booktabs,tabularx,array,graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=MidnightBlue,urlcolor=MidnightBlue,citecolor=MidnightBlue]{hyperref}
+\usepackage{fancyhdr}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{2em}
+\setlist{nosep,leftmargin=*}
+\newcommand{\file}[1]{\path{#1}}
+\newcommand{\PQ}{\mathrm{PQ}}
+\newcommand{\Fone}{F_{1,\mathrm{match}}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Computer Vision Project 2}
+\fancyhead[R]{\small Q5: experiment summary}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\title{Cell Matching and Segmentation\\\large Implementation and Experiment Summary}
+\author{Rohit Farfad (rf2887) \& Aryan Yadav (ay3140)}
+\date{CS-GY 6643, NYU Tandon --- Fall 2026\\October 11, 2026}
+\begin{document}
+\maketitle
+\thispagestyle{plain}
+
+\begin{abstract}
+We developed a pipeline to segment cells in paired in-vivo and ex-vivo microscopy images and match corresponding instances. We began with classical filtering, watershed segmentation, affine registration and one-to-one assignment, then trained separate small U-Nets for the two imaging modalities. Later experiments reused the saved U-Net weights and improved inference, contrast preprocessing and geometric matching. The strongest saved fixed configuration has a reconstructed local combined score of \textbf{0.4027}, with segmentation PQ of 0.6105/0.3628 and matching F1 of 0.3187. This is a development score after selecting settings on the released training data. The only recorded Kaggle public result is \textbf{0.34684} for an earlier U-Net candidate, reported in a user-provided screenshot. Neither the original 0.70 target nor the revised 0.65 target was reached. This report summarizes the saved implementation and completed or partial experiments, including approaches that did not help.
+\end{abstract}
+
+\section{Task, data and evaluation}
+The \href{https://www.kaggle.com/competitions/testingpj-2}{Q5 competition} requires an instance mask for every detected cell in both modalities and a list of one-to-one correspondences for each image pair. Tissue deformation, different appearance, bright ex-vivo fibers and missing cells make direct intensity matching unreliable. A larger ex-vivo image does not imply proportionally larger cell bodies: the handout reports median mask areas of 86 in-vivo pixels and 71 ex-vivo pixels~\cite{handout}.
+
+The supplied dataset has 47 training regions from three mice and 29 hidden-test regions from two mice. The training annotations contain 14,893 in-vivo cells, 5,516 ex-vivo cells and 1,139 verified pairs. There are 152 native grayscale TIFFs and two CSV files. We preserve the original 16-bit images and normalize derived arrays for processing. Input hashes and inventory are recorded in \file{DATA_SOURCES.json}. No hidden-test labels are available.
+
+The combined metric is
+\begin{equation}
+S=0.25\PQ_{\mathrm{in}}+0.25\PQ_{\mathrm{ex}}+0.50\Fone.
+\end{equation}
+A predicted mask is a true positive only when its intersection-over-union with a ground-truth mask is \emph{strictly greater than} 0.75, with one-to-one mask matching. For each modality and region,
+\begin{equation}
+\PQ=\frac{\sum_{(p,g)\in\mathrm{TP}}\operatorname{IoU}(p,g)}
+{|\mathrm{TP}|+\frac12|\mathrm{FP}|+\frac12|\mathrm{FN}|}.
+\end{equation}
+We average PQ over regions. A correspondence counts as correct only if both predicted masks qualify as true positives and their ground-truth IDs form a verified pair. Matching F1 pools counts across regions:
+\begin{equation}
+\Fone=\frac{2C}{P+V},
+\end{equation}
+where $C$ is the number of correct predicted pairs, $P$ is the number of predicted pairs and $V$ is the number of verified pairs. A pair missing from the annotations is unverified, not necessarily biologically incorrect; it nevertheless cannot receive positive credit under this reconstruction.
+
+All local scores use our implementation of the handout metric. The official scorer and its unspecified empty-case conventions were not independently verified. These values are combined scores, not pixel accuracy.
+
+\section{Validation protocol}
+The initial neural experiment used 29 regions from two mice for training and the remaining 18 regions for evaluation. The completed U-Net workflow used three folds, excluding one entire mouse from weight training in each fold. Mask-area limits and initial postprocessing calibration used only the corresponding weight-training regions. Final deployment models were fitted separately using all 47 released regions.
+
+For later parameter comparisons, we selected settings using the other two mice and pooled the excluded-mouse results. We call this \textbf{retrospective grouped development evaluation}: the mice and earlier results had already informed method design. It is not an untouched test or a fully nested cross-validation estimate. In particular, selecting settings from predictions produced by multiple previously fitted folds does not remove all dependence on earlier design choices.
+
+We distinguish three forms of evidence throughout:
+\begin{itemize}
+\item \textbf{Grouped development:} settings selected using other mice within the saved experiment table, subject to the limitations above.
+\item \textbf{All-data-selected:} the best fixed settings selected and scored on all released regions. These scores are optimistic.
+\item \textbf{Public Kaggle:} only the previously reported 0.34684 result. No public score is recorded for the newer candidates.
+\end{itemize}
+Six-region pilots informed several later comparisons. Partial model evaluations are reported with their actual number of regions and are not treated as complete competition evaluations.
+
+\section{Implemented methods}
+\subsection{Classical segmentation and geometry}
+The first pipeline normalizes intensities by percentiles, subtracts a smooth background and detects difference-of-Gaussian blob peaks. Ex-vivo Hessian evidence helps suppress elongated processes. Marker-controlled watershed separates instances; basin-relative intensity thresholds, area and elongation checks remove unsuitable regions. In-vivo masks receive a small expansion.
+
+The refinement adds median denoising, multiscale in-vivo detection, revised basin thresholds, largest-component cleanup and hole filling that preserves neighboring labels. Shared parameters are used across images; there are no manually placed test regions or corrected predictions. Further compactness, solidity and contrast filtering gives only a small additional segmentation gain.
+
+Registration initially searched rotation, scale and translation using image correlation. Lecture-inspired revisions added affine scale/shear hypotheses and a few iterations of close mutual-neighbor ICP, with RANSAC refitting. A second initializer matches geometric descriptors of local triangles formed by predicted cell centroids, rejects implausible transforms and ranks hypotheses by support. An update guard rejects ICP changes that reduce support. Hungarian assignment uses a distance gate, explicit unmatched options and an optional scale-adjusted cell-area penalty. These steps build on robust fitting and image transformation concepts used in the earlier questions~\cite{lectures}.
+
+\subsection{Small modality-specific U-Nets}
+We train one small network per modality, from scratch, without external weights. Each network has 118,642 parameters, two pooling levels, channel widths 16/32/64, skip connections, bilinear upsampling, $3\times3$ convolutions, GroupNorm and ReLU. Two output channels predict foreground and eroded cell interiors. The interior channel provides watershed markers, so touching foreground regions can become separate instances.
+
+The first experiment used 12 epochs; the completed workflow used 36 epochs, 60 batches per epoch, batch size 8 and $128\times128$ patches. AdamW starts at learning rate $10^{-3}$ with weight decay $10^{-4}$ and a cosine schedule ending at $10^{-4}$. The saved seed is 7. Training ran with the project's PyTorch environment and Apple MPS.
+
+Patch centers are sampled approximately 60\% from annotated cells, 20\% from bright non-cell locations and 20\% uniformly. The bright-background sampling addresses fibers and neuropil; it is not an iterative learned hard-negative mining loop. Paired rotations and flips preserve image--mask alignment, while intensity, gamma and noise augmentation vary appearance. The completed loss combines boundary-weighted binary cross-entropy and Dice loss over foreground/interior targets. Boundary pixels receive extra BCE weight because a small boundary error can fail the strict IoU threshold.
+
+Watershed runs inside the thresholded foreground, using connected interior components as markers. Training-derived area quantiles reject unlikely instances. The final all-training model metadata selects foreground thresholds 0.5 in vivo and 0.6 ex vivo, with area limits 27--218 and 19--251 pixels respectively. Fold-specific limits and settings come from their own training subsets.
+
+\subsection{Saved-weight inference and matching improvements}
+After alternative training became too costly, we kept the U-Net checkpoints fixed. The strongest complete inference comparison uses $128\times128$ tiles, matching the training context, 50\% overlap, center-weighted blending and prediction averaging over four right-angle rotations. Predictions are restored to native image dimensions before instance extraction.
+
+The improved matcher considers both centroid-triangle and image-correlation affine hypotheses. Confidence measures mutual-neighbor support within the estimated overlap instead of penalizing the large unmatched ex-vivo field. Hungarian costs combine spatial distance, relative area and a small neighborhood-consistency term. Confidence gating allows the algorithm to return no pairs. The quick pass adds mutual-nearest-neighbor rejection and selects an 8-pixel assignment gate with confidence cutoff 0.28.
+
+The latest saved candidate additionally applies gamma 1.2 to normalized in-vivo input, leaving ex-vivo preprocessing unchanged. After affine alignment, isolated mutual neighbors within five pixels form displacement anchors. At least six anchors are required; Gaussian smoothing with a 60-pixel neighborhood gives a local displacement limited to three pixels. This changes matching coordinates only: segmentation masks stay in their native image coordinates. No annotated correspondence is used to initialize test-time geometry.
+
+\section{Main experiment results}
+Table~\ref{tab:grouped} reports the principal 47-region grouped summaries. Rows differ in candidate pools and therefore describe development stages rather than perfectly controlled single-variable ablations.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Retrospective grouped local results on 47 regions. Higher is better.}
+\label{tab:grouped}
+\begin{tabularx}{\linewidth}{@{}Xrrrr@{}}
+\toprule
+Stage & $\PQ_{\mathrm{in}}$ & $\PQ_{\mathrm{ex}}$ & $\Fone$ & $S$\\
+\midrule
+Classical, affine/ICP revision & .3746 & .2005 & .0447 & .1661\\
+Classical, denoising/triangles & .4535 & .2434 & .0957 & .2221\\
+Classical, further filtering & .4537 & .2440 & .1478 & .2483\\
+Completed small U-Net & .5602 & .3475 & .2840 & .3689\\
+Saved-weight inference/matching & .5971 & .3517 & .2762 & .3753\\
+Quick matching, fixed TTA masks & .5995 & .3628 & .3059 & .3935\\
+Input-preprocessing selection & .5966 & .3576 & .3197 & .3984\\
+Local-matching selection$^\dagger$ & .6105 & .3628 & .3106 & .3986\\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\parbox{\linewidth}{\footnotesize $^\dagger$Gamma preprocessing was fixed using all inspected development data before grouping the matching settings. This row does not evaluate the entire preprocessing/matching selection procedure independently.}
+\end{table}
+
+The earliest classical baseline scored 0.1600 on the 18-region evaluation subset, with matching F1 equal to zero. In the later \emph{same-subset} first neural comparison, the classical reference scored 0.1918 and the 12-epoch U-Net scored 0.2537: PQ improved from 0.4119/0.2337 to 0.4757/0.3064, and matching F1 from 0.0607 to 0.1164. These 18-region results should not be directly ranked against the 47-region table.
+
+Training the completed modality-specific networks and evaluating all three excluded mice produced the largest measured gain. Later improvements were smaller. The quick matching result uses fixed context-128 rotation-averaged masks throughout; the preceding grouped experiment could choose different inference variants. Its increase from 0.3753 to 0.3935 therefore is not solely an isolated change in pair rejection.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Fixed configurations selected using all 47 released regions; optimistic local comparisons, not public scores.}
+\label{tab:selected}
+\begin{tabularx}{\linewidth}{@{}Xrrrr@{}}
+\toprule
+Configuration & $\PQ_{\mathrm{in}}$ & $\PQ_{\mathrm{ex}}$ & $\Fone$ & $S$\\
+\midrule
+Refined classical & .4535 & .2434 & .1598 & .2541\\
+Further classical filtering & .4538 & .2442 & .1603 & .2547\\
+U-Net context-128 TTA + structural matching & .5995 & .3628 & .3017 & .3914\\
+Quick U-Net matching & .5995 & .3628 & .3101 & .3956\\
+Gamma input + affine matching & .6105 & .3628 & .3144 & .4005\\
+Gamma input + bounded local correction & .6105 & .3628 & .3187 & \textbf{.4027}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The latest fixed configuration improves the selected local score by about 0.0070 over the quick pass. Its grouped matching-only score is 0.3986, while the separate grouped preprocessing experiment scores 0.3984. These are related but different experiments; neither establishes hidden-test performance for the final combined configuration.
+
+\section{Ablations and unsuccessful experiments}
+\subsection{Classical and geometric alternatives}
+Preprocessing pilots compared median filtering, CLAHE, white top-hat, different blob scales and basin boundaries. Median filtering helped; multiple scales helped in vivo but not ex vivo. Closing/convex cleanup and several contrast enhancements were weaker. SIFT and alternative correlation initializers were unreliable across the modality change; centroid triangles resolved some missed alignments but still confused similar cell constellations.
+
+A later six-region pilot tested 11 classical variants: the baseline, local Otsu and half-Otsu boundaries, eight iterations of morphological Chan--Vese, morphological background opening, prominence-based seeds, region filtering, combined local refinement/filtering and three ellipse sizes. Local thresholds, active contours and ellipse approximations generally reduced PQ. Background opening helped in the pilot but did not retain an advantage on the complete comparison. Conservative filtering survived, with only a small mask-quality gain. Mutual-information registration, CPD and structural matching were also compared; the selected classical deployment retained the previous triangle/guarded-ICP matcher.
+
+For the neural masks, optional CPD deformation and different structural costs, gates and confidence thresholds were evaluated. CPD was not selected in the complete saved-weight comparison. The later bounded local correction is a separate, simpler method, not evidence that the earlier CPD experiment succeeded.
+
+\subsection{Inference, boundaries and input changes}
+\begin{table}[htbp]
+\centering\small
+\caption{Complete inference comparison using unchanged excluded-mouse U-Net weights (47 regions per modality).}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Inference configuration & $\PQ_{\mathrm{in}}$ & $\PQ_{\mathrm{ex}}$\\
+\midrule
+128-pixel context, weighted overlap & .5832 & .3544\\
+128-pixel context + rotation averaging & .5995 & .3628\\
+256-pixel context + rotation averaging & .5821 & .3600\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Further six-region pilots tested 16 mask-postprocessing variants, including foreground thresholds, smoothing, peak markers and probability-based watershed, followed by a foreground/core-threshold sweep. Some settings helped one modality but hurt the other; no blanket boundary/seed change replaced the deployed settings. For example, the pilot baseline PQ was 0.6331/0.3040, while a peak-based variant improved ex-vivo PQ to approximately 0.3150 but reduced in-vivo PQ to approximately 0.5823.
+
+Seven input variants compared the baseline, gamma 0.8/1.2, reflection averaging, scales 0.85/1.15 and multiscale averaging. On the pilot, gamma 1.2 improved in-vivo PQ from 0.6331 to 0.6412 but reduced ex-vivo PQ from 0.3040 to 0.2992. Scaling gave larger losses. Complete comparisons retained gamma 1.2 only in vivo; this is an empirical dataset-specific preprocessing choice, not a universal improvement.
+
+A regularized correspondence classifier used 11 geometric, shape, contrast and ambiguity features. Its saved calibration set contained 352 positives, 1,023 confirmed errors and 242 unknown pairs; unknown pairs were excluded rather than mislabeled as negatives. The selected score was 0.3951, but grouped performance fell to 0.3690. We rejected this model because it did not improve the development comparison under grouping.
+
+\subsection{Alternative learned models: partial evidence}
+Three broader directions were implemented: foreground/distance-map supervision, a StarDist-style ray head, and modality-specific fine-tuning of pretrained Cellpose \texttt{cyto3}. The distance model predicts normalized interior distance and uses peaks plus watershed. The StarDist-style adaptation predicts 32 radial distances with a project PyTorch U-Net and uses StarDist geometry/non-maximum suppression; it is \emph{not} the official TensorFlow StarDist2D network. Cellpose fine-tuning uses cell-centered and bright-background patches. A separate Cellpose-SAM pilot also has saved predictions.
+
+Training was stopped when the workflow returned to quick improvements of existing weights. Some modality/fold runs had finished; others had not. Table~\ref{tab:partial} summarizes the actual saved evaluation rows, not the intended experiment coverage.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Alternative-model segmentation results. Parentheses give evaluated region counts; incomplete subsets prevent direct overall ranking.}
+\label{tab:partial}
+\begin{tabularx}{\linewidth}{@{}Xrr@{}}
+\toprule
+Method & In-vivo mean PQ ($n$) & Ex-vivo mean PQ ($n$)\\
+\midrule
+Distance-target U-Net & .6168 (47) & .3170 (29)\\
+Distance-target U-Net + rotation averaging & .6250 (47) & .3195 (29)\\
+StarDist-style U-Net & .4709 (29) & .2134 (29)\\
+Fine-tuned Cellpose cyto3 & .6118 (29) & .2984 (16)\\
+Cellpose-SAM pilot & .5516 (3) & .2525 (3)\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A separate polygon reconstruction diagnostic used ground-truth masks from 12 regions (3,762 in-vivo and 1,391 ex-vivo cells). Mean reconstruction IoU was 0.9875/0.9829; approximately 99.97\%/99.50\% exceeded 0.75. This checks whether the star representation can express annotated shapes. It does not measure learned detection or segmentation accuracy. Although distance supervision has promising in-vivo results, no complete two-modality, 47-region matching score or selected hidden-test candidate is established for these alternatives. The selected U-Net uses no pretrained external weights; the separate Cellpose experiment did download an official pretrained checkpoint.
+
+\section{Latest candidate and remaining errors}
+The latest saved deployment settings are in
+\file{outputs/q5/unet_refined/deployment.json}:
+gamma-1.2 in-vivo preprocessing, baseline ex-vivo preprocessing, the bounded \texttt{local60} matcher and confidence cutoff 0.28. Its output is \file{Kaggle Submissions/unet_refined.csv}. This is the strongest saved fixed local configuration, not a verified final competition selection.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Preserved local candidate files. All contain 29 test rows; counts are output inventory, not accuracy.}
+\begin{tabularx}{\linewidth}{@{}Xrrrr@{}}
+\toprule
+CSV stem & In-vivo masks & Ex-vivo masks & Pairs & Zero-pair rows\\
+\midrule
+\texttt{classical\_submission} & 9207 & 2712 & 33 & 24\\
+\texttt{classical\_lecture6} & 8712 & 2609 & 185 & 19\\
+\texttt{classical\_refined} & 9168 & 2621 & 122 & 22\\
+\texttt{classical\_improved} & 9151 & 2605 & 98 & 23\\
+\texttt{unet\_submission} & 9329 & 4130 & 229 & 23\\
+\texttt{unet\_improved} & 8954 & 4176 & 384 & 16\\
+\texttt{unet\_quick} & 8954 & 4176 & 347 & 18\\
+\texttt{unet\_refined} & 8549 & 4176 & 417 & 14\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+More predicted pairs alone do not establish better matching. Ex-vivo segmentation remains the weaker modality: bright fibers can resemble cells, dim bodies are missed, and boundary errors or merged instances fail the strict IoU cutoff. Ambiguous spatial constellations and partial overlap still produce wrong or low-confidence registration. Confidence gating protects precision but discards potentially correct pairs in many regions.
+
+A useful diagnostic fixes the predicted masks and assumes perfect identification of every verified pair whose two masks are true positives. If $R$ of $V$ verified pairs are recoverable, the best possible matching F1 for those masks is
+\begin{equation}
+\Fone^{\mathrm{oracle}}=\frac{2R}{R+V},\qquad
+S^{\mathrm{oracle}}=\tfrac14(\PQ_{\mathrm{in}}+\PQ_{\mathrm{ex}})
++\tfrac12\Fone^{\mathrm{oracle}}.
+\end{equation}
+The refined classical masks recover 276 of 1,139 verified pairs, capping their local score near 0.3693. The context-128 TTA U-Net masks recover 560 pairs and raise this bound to approximately 0.5702. The latest input-refined masks still give a bound of only about 0.5722, as recorded in the advanced notebook. This hypothetical bound uses training annotations for diagnosis only. It shows that matching improvements alone cannot reach 0.65 or 0.70 with the current masks.
+
+\IfFileExists{outputs/q5/unet_refined/mask_comparison.png}{%
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth,height=0.42\textheight,keepaspectratio]{outputs/q5/unet_refined/mask_comparison.png}
+\caption{Saved validation crop comparing the quick and input-refined U-Net masks. The display region is nearest the median in-vivo PQ change; annotations determine the diagnostic crop only. It illustrates mixed boundary gains and remaining errors, not hidden-test accuracy.}
+\end{figure}}
+
+\section{Reproducibility and artifact map}
+\file{CellMatchingSegmentation.ipynb} contains the classical workflow;
+\file{SmallUNetExperiment.ipynb} documents the small-network experiment and completed training workflow;
+\file{AdvancedCellMatching.ipynb} records saved-weight improvements and the latest refinement. Their reusable helpers contain the automatic inference paths rather than manually edited predictions.
+
+\begin{table}[htbp]
+\centering\footnotesize
+\caption{Primary evidence and implementation locations (relative to the project root).}
+\begin{tabularx}{\linewidth}{@{}p{0.25\linewidth}X@{}}
+\toprule
+Purpose & Files or directories\\
+\midrule
+Classical pipeline & \file{cell_matching.py}, \file{classical_cells.py}\\
+Classical measurements & \file{outputs/q5/lecture6_cv_summary.json}, \file{outputs/q5/refinement/}, \file{outputs/q5/classical_improved/}\\
+U-Net training/weights & \file{unet_cells.py}, \file{outputs/q5/unet/}, \file{outputs/q5/unet_complete/}\\
+Inference and alignment & \file{unet_inference.py}, \file{cell_alignment.py}, \file{advanced_cells.py}\\
+Alternative models & \file{cell_models.py}, \file{cellpose_cells.py}, \file{cellpose_sam_pilot.py}, \file{outputs/q5/advanced/segmentation_comparison.csv}\\
+Quick matching & \file{unet_quick.py}, \file{outputs/q5/unet_quick/}\\
+Latest refinement & \file{unet_refined.py}, \file{unet_inputs.py}, \file{cell_local_matching.py}, \file{cell_pair_scores.py}, \file{outputs/q5/unet_refined/}\\
+Experiment selection & \file{run_classical_experiments.py}, \file{run_cell_experiments.py}, \file{run_pair_calibration.py}\\
+Input/disclosure records & \file{DATA_SOURCES.json}, \file{AGENTS.md}, \file{AI_USAGE.md}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+From the project root, the latest candidate can be regenerated with the existing all-training checkpoints and deployment metadata:
+\begin{verbatim}
+.venv/bin/python unet_inputs.py \
+  --output "Kaggle Submissions/unet_refined.csv"
+\end{verbatim}
+The writer can reuse cached masks or infer them from saved models. Preserve \file{outputs/q5/unet_complete/final/}, the deployment metadata and required helper modules when packaging runnable code. The principal environment is Python 3.12 with pinned core dependencies in \file{requirements.txt} and PyTorch in \file{requirements-unet.txt}. Optional alternative-model dependencies are separate from the selected inference path. GPU/backend differences and stochastic retraining can change results; saved-checkpoint inference is the reproducible artifact being compared.
+
+CSV writers retain every supplied sample ID and order, serialize per-instance zero-based row-major RLE into JSON dictionaries, and encode pairs as JSON lists. Native mask dimensions, run bounds, valid IDs and one-to-one pair ownership are checked. The newest RLE implementation encodes within cell bounding boxes using full-image indices and checks reconstructed labels, avoiding a full-image scan for every cell. The notebook reports an approximately $7.4\times$ encode-and-check speedup on one 181-cell example; this is not an end-to-end runtime guarantee.
+
+Saved verification records document native RLE/ID contracts, clean notebook execution and byte-identical independent inference for several earlier candidates, including the completed U-Net, improved U-Net, classical refinement and quick pass. Those records are specific to their versions and do not automatically certify every later edit. This report was prepared by reading current code, notebooks and saved results; it did not rerun model training or obtain a new leaderboard result.
+
+\clearpage
+\section{Conclusion}
+The small modality-specific U-Net substantially improved both segmentation and the number of matchable cells over the classical pipeline. Matching training and inference patch context, averaging rotated predictions and making assignment more conservative gave useful further gains without retraining. Gamma preprocessing and a small bounded displacement correction provided a final modest local improvement. Several more complex alternatives failed to help or remained incomplete. The main remaining obstacle is accurate ex-vivo instance segmentation under the strict mask threshold, followed by reliable registration in ambiguous regions. The strongest saved local score is 0.4027; the only reported public score remains 0.34684 for the earlier U-Net.
+
+\begin{samepage}
+\section*{AI assistance disclosure}
+OpenAI Codex assisted with implementation, experiment design and execution, debugging, validation, and preparation of this report. The chronological user prompts and assistance notes available in the project are retained in \file{AI_USAGE.md}; notebooks also preserve relevant prompt excerpts. That record should accompany submission artifacts rather than be replaced by this summary. Results here come from saved project measurements, not generated or estimated benchmark claims. No new Kaggle upload or final-submission selection was performed while preparing this report.
+
+\end{samepage}
+
+\begin{thebibliography}{9}
+\raggedright
+\bibitem{handout} NYU Tandon, CS-GY 6643. \emph{Computer Vision Project 2, Question 5: Cell Matching and Segmentation}. Fall 2026. Local source: \file{ComputerVision_Project2_Q5 (1).pdf}, especially pp. 2--9.
+\bibitem{lectures} CS-GY 6643, Lectures 3--6 and supplied codelabs. Fall 2026. Robust fitting and transformations (Lectures 3--4); segmentation, CNN training and validation (Lectures 4--6); project guidance (Lecture 5 p. 111 and Lecture 6 p. 70). Reviewed source paths and reusable cells are recorded in \file{AGENTS.md}, Section 6.
+\bibitem{records} Project 2 implementation and experiment records. \file{CellMatchingSegmentation.ipynb}, \file{SmallUNetExperiment.ipynb}, \file{AdvancedCellMatching.ipynb}, and machine-readable measurements under \file{outputs/q5/}. Repository snapshot reviewed October 11, 2026.
+\end{thebibliography}
+\end{document}

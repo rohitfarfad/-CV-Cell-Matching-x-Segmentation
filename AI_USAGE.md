@@ -222,3 +222,10 @@ Validation: all17 code cells executed in order in a fresh kernel with no errors;
 Assistance: reuse saved U-Net masks and checkpoints, compare12 small matching configurations on47 excluded-mouse regions, and select a confidence cutoff plus mutual-nearest-neighbor filter. No retraining, additional model inference, new dependency or Kaggle upload. Add runnable `unet_quick.py` and an executed quick-pass section in `AdvancedCellMatching.ipynb`; update the earlier preservation check to the current authorized project snapshot.
 
 Outcome: retrospective grouped local S0.3935 versus0.3753; optimistic all-data-selected S0.3956 versus0.3914. Grouped selection uses fixed context128_tta masks throughout, whereas previous grouped selection could choose another saved inference variant. These results are development comparisons, not untouched validation or public scores. Selected gate8/cutoff0.28/mutual filtering generates `unet_quick.csv`:29rows,8954/4176 masks,347pairs,18zero-pair regions.23 tests pass;3 new notebook code cells execute in a fresh kernel in106.4seconds. Native RLE/IDs/one-to-one/CSV checks pass; mask columns exactly equal the earlier improved candidate.168 original inputs and23 protected artifacts unchanged. Evidence: `outputs/q5/unet_quick/verification.json`. Target0.65 remains unmet; no new Kaggle score.
+
+
+## Request 34 — 2026-10-11
+
+> Go through the Kaggle project implementation and all the experimantation done and generate a summary report in the latex in report.tex file
+
+Assistance: reviewed the Q5 notebooks, classical and neural helpers, saved metrics, partial alternative-model evaluations and candidate CSV inventories. Created `report.tex` with methods, experimental comparisons, validation scope, unsuccessful experiments, artifact locations, reproduction instructions and AI disclosure. Distinguished retrospective grouped results, all-data-selected scores and the user-reported public score. Compiled and visually reviewed the report; no training, inference regeneration, data changes, Kaggle upload, or README update.
